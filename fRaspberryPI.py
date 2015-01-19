@@ -13,7 +13,7 @@ class ComponentBaseObject(object):
         self.DebugOn = debugOn
 
     def Trace(self, m):
-        mm = "%s" % (m)
+        mm = "[%s]%s" % (StringFormat.GetTime(), m)
         print(mm)
 
     def Debug(self, m):
@@ -31,23 +31,16 @@ class StringFormatClass(ComponentBaseObject):
         self.Debug("Init board")
 
     def GetTime(self):
-        localtime = time.localtime(time.time())
-        t = time.mktime(localtime)
-        return time.strftime("%H:%M:%S", time.gmtime(t))
+        return time.strftime("%H:%M:%S", time.localtime(time.time()))
 
     def GetLocalTimeStamp(self):
-        localtime = time.localtime(time.time())
-        t = time.mktime(localtime)
-        return time.strftime("%m.%d.%y %H:%M:%S", time.gmtime(t))
+        return time.strftime("%y.%m.%d %H:%M:%S", time.localtime(time.time()))
 
     def GetLocalTimeStampMinute(self):
-        localtime = time.localtime(time.time())
-        t = time.mktime(localtime)
-        return time.strftime("%y.%m.%d %H:%M", time.gmtime(t))
+        return time.strftime("%y.%m.%d %H:%M", time.localtime(time.time()))
 
 # -- Declare global singleton --
 StringFormat = StringFormatClass()
-
 
 ######################################################################
 ##
