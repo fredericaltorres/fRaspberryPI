@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 import time
-import pickle
+import json
 import os.path
 #import fRaspberryPI *
 from fRaspberryPI import * # Import al in the current namespace
@@ -19,16 +19,18 @@ class DailyActivity(object):
         else:    
             self.DailyActivity[minuteId] = True
             Board.Trace("Motion Detected - %s" % (minuteId))
+            self.Save()
 
     def Save(self):
-        with open(self.fileName, 'wb') as f:
-            pickle.dump(obj, f)
+        with open(self.fileName, "w") as f:
+            f.write(json.dumps(self.DailyActivity))
 
     def Load(self):
         self.DailyActivity = {}
         if os.path.isfile(self.fileName):
-            with open(self.fileName, 'rb') as f:
-                self.DailyActivity = pickle.load(f)
+            with open(self.fileName, 'r') as f:
+                js = f.read()
+                self.DailyActivity = json.load(js)
 
 ######################################################################
 ## Main                                                             ##
