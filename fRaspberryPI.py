@@ -43,7 +43,7 @@ class StringFormatClass(ComponentBaseObject):
     def GetLocalTimeStampMinute(self):
         localtime = time.localtime(time.time())
         t = time.mktime(localtime)
-        return time.strftime("%m.%d.%y %H:%M", time.gmtime(t))
+        return time.strftime("%y.%m.%d %H:%M", time.gmtime(t))
 
 # -- Declare global singleton --
 StringFormat = StringFormatClass()
