@@ -6,3 +6,4 @@ echo ============================
 
 %PYEXE% fRaspberryPIUtils.UnitTests.py
 %PYEXE% MinuteActivity.UnitTests.py
+%PYEXE% DailyActivity.UnitTests.py
