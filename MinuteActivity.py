@@ -12,13 +12,27 @@ class MinuteActivity(ComponentBaseObject):
         like DecMinute() which will return the MinuteId instance for the previous minute
     '''    
 
-    def __init__(self, minuteId):
-        self.MinuteId = minuteId
-        self.Minute   = self.__GetMinute(minuteId)
-        self.Hour     = self.__GetHour(minuteId)
-        self.Day      = self.__GetDay(minuteId)
-        self.Month    = self.__GetMonth(minuteId)
-        self.Year     = self.__GetYear(minuteId)
+    def __init__(self, minuteId = None):
+        if minuteId != None:
+            self.MinuteId = minuteId
+            self.Minute   = self.__GetMinute(minuteId)
+            self.Hour     = self.__GetHour(minuteId)
+            self.Day      = self.__GetDay(minuteId)
+            self.Month    = self.__GetMonth(minuteId)
+            self.Year     = self.__GetYear(minuteId)
+
+    def Initialize(self, year, month, day, hour, minute):
+        self.Minute   = minute
+        self.Hour     = hour
+        self.Day      = day
+        self.Month    = month
+        self.Year     = year
+
+        if self.Year > 2000:
+            self.Year -= 2000
+
+        self.__Reassemble()
+        return self
 
     def __Clone(self):
         return copy.deepcopy(self)
@@ -41,6 +55,12 @@ class MinuteActivity(ComponentBaseObject):
         newInstance.__Reassemble()
         return newInstance
 
+    #           11111
+    #  01234567890123
+    #  15.01.19 21:17
+    def GetFQNDay(self, minuteId):
+        return self.MinuteId[0:8]
+        
     #           11111
     #  01234567890123
     #  15.01.19 21:17

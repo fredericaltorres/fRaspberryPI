@@ -8,8 +8,8 @@ import copy
 
 from fRaspberryPIUtils import *
 from fRaspberryPI import * # Import al in the current namespace
-import MinuteActivity
-import DailyActivity
+from MinuteActivity import *
+from DailyActivity import *
 
 '''
 dailyActivity = DailyActivity()
@@ -24,6 +24,8 @@ quit()
 #dailyActivity.AddActivityToCloud("15.01.19 14:34")
 '''
 
+MinuteOfInactivityThreshHold = 2
+
 if __name__ == "__main__":
     ######################################################################
     ## Main                                                             ##
@@ -31,15 +33,15 @@ if __name__ == "__main__":
     mainLed         = Led(7)
     motionSensor    = RadioShackPIRSensor(12)
     timeOut         = TimeOut(250)
-    dailyActivity   = DailyActivity()
+    dailyActivity   = DailyActivity("DailyActivity.json", supportCloud = True)
 
     mainLed.SetBlinkMode(1000)
-    Board.Trace("Timeout:%s, time:%d" %(timeOut, millis()))
     Board.Trace("Activity Tracker Start @ %s" % (StringFormat.GetLocalTimeStampMinute()))
 
     while True:
         mainLed.Blink()
         if(timeOut.IsTimeOut()):
+
             if(motionSensor.MotionDetected()):
                 minuteId = StringFormat.GetLocalTimeStampMinute()
                 newMotionDetectedForCurrentMinute = dailyActivity.AddActivity(minuteId)
@@ -49,5 +51,8 @@ if __name__ == "__main__":
                     Board.Trace("Ready")
                 else:    
                     mainLed.Blink(40, 100) # Blink for 4 seconds quickly
+            minuteOfInactivity = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
+            if minuteOfInactivity > MinuteOfInactivityThreshHold:
+                Board.Trace("Detected Inactivity")
 
     Board.Done()
