@@ -24,7 +24,12 @@ quit()
 #dailyActivity.AddActivityToCloud("15.01.19 14:34")
 '''
 
-MinuteOfInactivityThreshHold = 2
+def TurnLights(onOff):
+    print("Turn Lights %s" %('On' if True else 'Off'))
+
+LastMinuteIdOfInactivityDetected = "" # Contains the last minuteId of inactivity 
+MinuteOfInactivityThreshHold     = 2
+LightOn                          = True # always start by turnin on the light
 
 if __name__ == "__main__":
     ######################################################################
@@ -38,11 +43,17 @@ if __name__ == "__main__":
     mainLed.SetBlinkMode(1000)
     Board.Trace("Activity Tracker Start @ %s" % (StringFormat.GetLocalTimeStampMinute()))
 
+    TurnLights(LightOn)
+
     while True:
         mainLed.Blink()
         if(timeOut.IsTimeOut()):
 
             if(motionSensor.MotionDetected()):
+                if LightOn == False: # Turn light on if no activity and light are on
+                    LightOn = True
+                    TurnLights(LightOn)
+
                 minuteId = StringFormat.GetLocalTimeStampMinute()
                 newMotionDetectedForCurrentMinute = dailyActivity.AddActivity(minuteId)
                 if newMotionDetectedForCurrentMinute:
@@ -51,8 +62,14 @@ if __name__ == "__main__":
                     Board.Trace("Ready")
                 else:    
                     mainLed.Blink(40, 100) # Blink for 4 seconds quickly
-            minuteOfInactivity = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
-            if minuteOfInactivity > MinuteOfInactivityThreshHold:
+
+            minuteIdOfInactivity    = StringFormat.GetLocalTimeStampMinute()
+            minuteOfInactivityCount = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
+            if minuteOfInactivityCount > MinuteOfInactivityThreshHold and LastMinuteIdOfInactivityDetected != minuteIdOfInactivity:
+                LastMinuteIdOfInactivityDetected = minuteIdOfInactivity
                 Board.Trace("Detected Inactivity")
+                if LightOn: # Turn light off if no activity and light are on
+                    LightOn = False
+                    TurnLights(LightOn)
 
     Board.Done()
