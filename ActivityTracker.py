@@ -1,3 +1,6 @@
+'''
+
+'''
 import RPi.GPIO as GPIO
 import time
 import json
@@ -6,79 +9,83 @@ import httplib
 import urllib
 import copy
 
-from fRaspberryPIUtils import *
-from fRaspberryPI import * # Import al in the current namespace
-from MinuteActivity import *
-from DailyActivity import *
+from fRaspberryPIUtils  import *
+from fRaspberryPI       import *
+from MinuteActivity     import *
+from DailyActivity      import *
 
-'''
-dailyActivity = DailyActivity()
-print("Count %d" % (dailyActivity.GetCount()))
-#print("Keys:")
-#for k in dailyActivity.GetKeys(): print(k)
-print("--------------------------------")
-minuteOfInactivity, inactivityHourMinuteSummary, lastMinuteOfActivity = dailyActivity.GetMinuteOfInactivityFromNow()
-print("minuteOfInactivity %d minute(s) - %s" %(minuteOfInactivity, inactivityHourMinuteSummary))
-print("lastMinuteOfActivity %s" %(lastMinuteOfActivity))
-quit()
-#dailyActivity.AddActivityToCloud("15.01.19 14:34")
-'''
-
-MAIN_LED_PIN = 16 
+MAIN_LED_PIN = 16
 LIGHT_PIN    = 18
-Off          = False 
-On           = True
+lightOn      = ON # always start by turnin on the light
+
+lastMinuteIdOfInactivityDetected = "" # Contains the last minuteId of inactivity
+minuteOfInactivityThreshHold = 3
 
 def TurnLights(onOff):
     Board.Trace("Turn Lights %s" %('On' if onOff else 'Off'))
     light1.SetState(onOff)
-    
 
-lastMinuteIdOfInactivityDetected = "" # Contains the last minuteId of inactivity 
-minuteOfInactivityThreshHold     = 1
-lightOn                          = True # always start by turnin on the light
+def ShowUserInfo(dailyActivity):
+    # Display some status information every 30 seconds
+    minuteIdOfInactivity    = StringFormat.GetLocalTimeStampMinute()
+    minuteOfInactivityCount = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
+    Board.Trace("User Info:");
+    Board.Trace("   Minute Of Inactivity:%d - [%s, %s]"   %(minuteOfInactivityCount, dailyActivity.GetNewestMinuteId(), dailyActivity.GetOldestMinuteId()))
+    Board.Trace("");
+
+def HandlePeriodOfInactivity():
+    '''    
+        Detect if the period of inactivity pass the threshhold, if yes shut the lights
+    '''
+    minuteIdOfInactivity    = StringFormat.GetLocalTimeStampMinute()
+    minuteOfInactivityCount = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
+    if minuteOfInactivityCount > minuteOfInactivityThreshHold and lastMinuteIdOfInactivityDetected != minuteIdOfInactivity:
+        lastMinuteIdOfInactivityDetected = minuteIdOfInactivity
+        Board.Trace("Detected Inactivity")
+        if lightOn: # Turn light off if no activity and light are on
+            lightOn = OFF
+            TurnLights(lightOn)   
+
+def HandleMotionDetected():
+    '''    
+        Detect if the period of inactivity pass the threshhold, if yes shut the lights
+    '''
+    global lightOn
+    if lightOn == OFF: # Turn light on if activity and light are off
+        lightOn = ON
+        TurnLights(lightOn)
+
+    minuteId = StringFormat.GetLocalTimeStampMinute()
+    if dailyActivity.AddActivity(minuteId): # if first motion detecton for current minute
+        Board.Trace("Motion Detected - %s" % (minuteId))
+        mainLed.Blink(20, 100) # Blink for 4 seconds quickly
+        Board.Trace("Ready")
+    else:
+        mainLed.Blink(20, 100) # Just signal motion detected, blink for 4 seconds quickly
 
 if __name__ == "__main__":
 
-    light1          = SunFounderRelay(LIGHT_PIN).SetState(Off)
-    mainLed         = Led(MAIN_LED_PIN).SetState(Off)
-    motionSensor    = RadioShackPIRSensor(12)
-    timeOut         = TimeOut(250)
-    dailyActivity   = DailyActivity("DailyActivity.json", supportCloud = True)
+    light1           = SunFounderRelay(LIGHT_PIN).SetState(OFF)
+    mainLed          = Led(MAIN_LED_PIN).SetState(OFF)
+    motionSensor     = RadioShackPIRSensor(12)
+    motionSensorTask = TimeOut(250)
+    userInfoTask     = TimeOut(30 * 1000)
+    dailyActivity    = DailyActivity("DailyActivity.json", supportCloud = True)
 
     mainLed.SetBlinkMode(1000)
     Board.Trace("Activity Tracker Start @ %s" % (StringFormat.GetLocalTimeStampMinute()))
     TurnLights(lightOn)
+    ShowUserInfo(dailyActivity)
 
     while True:
 
-        mainLed.Blink()
-        if(timeOut.IsTimeOut()):
+        mainLed.Blink() # Signal normal activity
 
-            # Motion Detection
-            if(motionSensor.MotionDetected()):
+        if(motionSensorTask.MustRunNow() and motionSensor.MotionDetected()):
+            HandleMotionDetected();
 
-                if lightOn == Off: # Turn light on if no activity and light are on
-                    lightOn = On
-                    TurnLights(lightOn)
-
-                minuteId = StringFormat.GetLocalTimeStampMinute()
-                newMotionDetectedForCurrentMinute = dailyActivity.AddActivity(minuteId)
-                if newMotionDetectedForCurrentMinute:
-                    Board.Trace("Motion Detected - %s" % (minuteId))
-                    mainLed.Blink(20, 100) # Blink for 4 seconds quickly
-                    Board.Trace("Ready")
-                else:    
-                    mainLed.Blink(20, 100) # Blink for 4 seconds quickly
-
-            # Period of inactivity
-            minuteIdOfInactivity    = StringFormat.GetLocalTimeStampMinute()
-            minuteOfInactivityCount = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
-            if minuteOfInactivityCount > minuteOfInactivityThreshHold and lastMinuteIdOfInactivityDetected != minuteIdOfInactivity:
-                lastMinuteIdOfInactivityDetected = minuteIdOfInactivity
-                Board.Trace("Detected Inactivity")
-                if lightOn: # Turn light off if no activity and light are on
-                    lightOn = Off
-                    TurnLights(lightOn)
+        if(userInfoTask.MustRunNow()):
+            HandlePeriodOfInactivity()
+            ShowUserInfo(dailyActivity)
 
     Board.Done()

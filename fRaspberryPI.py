@@ -6,6 +6,10 @@ from fRaspberryPIUtils import *
 def millis():
     return time.time() * 1000
 
+OFF          = False
+ON           = True
+  
+
 ######################################################################
 ##
 class BoardClass(ComponentBaseObject):
@@ -67,6 +71,9 @@ class TimeOut(ComponentBaseObject):
     def Reset(self):
         self._time   = millis()
         self.Counter += 1
+
+    def MustRunNow(self):        
+        return self.IsTimeOut()
 
     def IsTimeOut(self):
         b = (millis() - self._time) > self._duration

@@ -50,9 +50,9 @@ class DailyActivity(ComponentBaseObject):
                 r1 = conn.getresponse()
                 if r1.status == 200:
                     self.Debug(r1.read())
-                    self.Trace("cloud call succeeded")
+                    #self.Trace("Cloud call succeeded")
                 else:
-                    self.Trace("cloud api:{0} failed status:{1}, reason:{2}".format(url, r1.status, r1.reason))
+                    self.Trace("Cloud api:{0} failed status:{1}, reason:{2}".format(url, r1.status, r1.reason))
             except:
                 print "Issue connecting to the cloud - MinuteId:%s" % minuteId
             finally:
@@ -91,6 +91,20 @@ class DailyActivity(ComponentBaseObject):
         keys = self.DailyActivity.keys()
         sorted(keys, reverse=True) # Ascending
         return keys
+
+    def GetNewestMinuteId(self):
+        keys = self.GetKeys()
+        if(len(keys)):
+            return keys[len(keys)-1]
+        else:
+            return ""
+
+    def GetOldestMinuteId(self):
+        keys = self.GetKeys()
+        if(len(keys)):
+            return keys[0]
+        else:
+            return ""            
 
     def GetReportForDay(self, minuteIdDay):
         textReport  = ""

@@ -22,6 +22,14 @@ class DailyActivity_UnitTests(unittest.TestCase):
         da = DailyActivity("DailyActivity.Test.2014.12.11.json")
         self.assertEqual(600, da.GetCount())
 
+    def testGetOldestMinuteId(self):
+        da = DailyActivity("DailyActivity.Test.2014.12.11.json")
+        self.assertEqual("14.12.11 15:43", da.GetNewestMinuteId());
+
+    def testGetNewestMinuteId(self):        
+        da = DailyActivity("DailyActivity.Test.2014.12.11.json")
+        self.assertEqual("14.12.11 08:34", da.GetOldestMinuteId());
+
     def testGetReportForDay(self):
         da          = DailyActivity("DailyActivity.Test.2014.12.11.json")
         minuteId    = "14.12.11 00:00"
