@@ -24,27 +24,24 @@ quit()
 #dailyActivity.AddActivityToCloud("15.01.19 14:34")
 '''
 
-RelayOn = False
-RelayOff = True
+MAIN_LED_PIN = 16 
+LIGHT_PIN    = 18
+Off          = False 
+On           = True
 
 def TurnLights(onOff):
-    print("Turn Lights %s" %('On' if onOff else 'Off'))
-    if onOff:
-        light1.SetState(RelayOn)
-        light2.SetState(RelayOn)
-    else:        
-        light1.SetState(RelayOff)
-        light2.SetState(RelayOff)
+    Board.Trace("Turn Lights %s" %('On' if onOff else 'Off'))
+    light1.SetState(onOff)
+    
 
 lastMinuteIdOfInactivityDetected = "" # Contains the last minuteId of inactivity 
-minuteOfInactivityThreshHold     = 2
+minuteOfInactivityThreshHold     = 1
 lightOn                          = True # always start by turnin on the light
 
 if __name__ == "__main__":
 
-    light1          = Led(16).SetState(RelayOff)
-    light2          = Led(18).SetState(RelayOff)
-    mainLed         = Led(7)
+    light1          = SunFounderRelay(LIGHT_PIN).SetState(Off)
+    mainLed         = Led(MAIN_LED_PIN).SetState(Off)
     motionSensor    = RadioShackPIRSensor(12)
     timeOut         = TimeOut(250)
     dailyActivity   = DailyActivity("DailyActivity.json", supportCloud = True)
@@ -61,18 +58,18 @@ if __name__ == "__main__":
             # Motion Detection
             if(motionSensor.MotionDetected()):
 
-                if lightOn == False: # Turn light on if no activity and light are on
-                    lightOn = True
+                if lightOn == Off: # Turn light on if no activity and light are on
+                    lightOn = On
                     TurnLights(lightOn)
 
                 minuteId = StringFormat.GetLocalTimeStampMinute()
                 newMotionDetectedForCurrentMinute = dailyActivity.AddActivity(minuteId)
                 if newMotionDetectedForCurrentMinute:
                     Board.Trace("Motion Detected - %s" % (minuteId))
-                    mainLed.Blink(40, 100) # Blink for 4 seconds quickly
+                    mainLed.Blink(20, 100) # Blink for 4 seconds quickly
                     Board.Trace("Ready")
                 else:    
-                    mainLed.Blink(40, 100) # Blink for 4 seconds quickly
+                    mainLed.Blink(20, 100) # Blink for 4 seconds quickly
 
             # Period of inactivity
             minuteIdOfInactivity    = StringFormat.GetLocalTimeStampMinute()
@@ -81,7 +78,7 @@ if __name__ == "__main__":
                 lastMinuteIdOfInactivityDetected = minuteIdOfInactivity
                 Board.Trace("Detected Inactivity")
                 if lightOn: # Turn light off if no activity and light are on
-                    lightOn = False
+                    lightOn = Off
                     TurnLights(lightOn)
 
     Board.Done()

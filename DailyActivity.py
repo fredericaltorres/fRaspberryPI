@@ -19,10 +19,10 @@ class DailyActivity(ComponentBaseObject):
     CloudApiDomain = "frederictorresmvc2015.azurewebsites.net"
     CloudApiUrl    = "/api/ActivityTracker?action=set&minuteId={0}"
 
-    def Trace(self, m):
-        print(m)    
-    def Debug(self, m):
-        pass
+    #def Trace(self, m):
+    #    print(m)    
+    #def Debug(self, m):
+    #    pass
 
     def __init__(self, fileName = None, supportCloud = False):
         # a dictionary containing key:%y.%m.%d %H:%M value:true if activity was detected

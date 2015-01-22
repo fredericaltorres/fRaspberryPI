@@ -139,6 +139,28 @@ class Led(ComponentBaseObject):
         return self.__str__()
 
 ######################################################################
+## SunFounderRelay
+class SunFounderRelay(ComponentBaseObject):
+
+    def __init__(self, pin):
+        super(SunFounderRelay, self).__init__()
+        self.Debug("Init pin:%d" % (pin))
+        Board.SetPinOut(pin)
+        self._pin  = pin
+        self.State = False
+
+    def SetState(self, onOff):
+        Board.PinOnOff(self._pin,  not onOff) # << SunFounderRelay are reverse
+        self.State = onOff
+        return self
+
+    def __str__(self):
+        return "Relay pin:%d, State:%r" % (self._pin, self.State)
+        
+    def __repr__(self):
+        return self.__str__()        
+
+######################################################################
 ##
 class RadioShackPIRSensor(ComponentBaseObject):
 
