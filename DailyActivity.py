@@ -40,18 +40,24 @@ class DailyActivity(ComponentBaseObject):
             http://frederictorresmvc2015.azurewebsites.net/api/ActivityTracker?action=set&minuteId=15.01.19%2013:46
         '''
         if self.SupportCloud:
-            conn            = httplib.HTTPConnection(DailyActivity.CloudApiDomain)
-            minuteIdEncoded = urllib.quote(minuteId.encode("utf-8"))
-            url             = DailyActivity.CloudApiUrl.format(minuteIdEncoded)
-            self.Debug("cloud api domain:{0}, url:{1}".format(DailyActivity.CloudApiDomain, url))
-            conn.request("GET", url)
-            r1 = conn.getresponse()
-            if r1.status == 200:
-                self.Debug(r1.read())
-                self.Trace("cloud call succeeded")
-            else:
-                self.Trace("cloud api:{0} failed status:{1}, reason:{2}".format(url, r1.status, r1.reason))
-            conn.close()
+            conn = None
+            try:
+                conn            = httplib.HTTPConnection(DailyActivity.CloudApiDomain)
+                minuteIdEncoded = urllib.quote(minuteId.encode("utf-8"))
+                url             = DailyActivity.CloudApiUrl.format(minuteIdEncoded)
+                self.Debug("cloud api domain:{0}, url:{1}".format(DailyActivity.CloudApiDomain, url))
+                conn.request("GET", url)
+                r1 = conn.getresponse()
+                if r1.status == 200:
+                    self.Debug(r1.read())
+                    self.Trace("cloud call succeeded")
+                else:
+                    self.Trace("cloud api:{0} failed status:{1}, reason:{2}".format(url, r1.status, r1.reason))
+            except:
+                print "Issue connecting to the cloud - MinuteId:%s" % minuteId
+            finally:
+                if conn != None:
+                    conn.close()
 
     def AddActivity(self, minuteId):
         if self.WasActive(minuteId):
@@ -123,9 +129,10 @@ class DailyActivity(ComponentBaseObject):
         ma = MinuteActivity(StringFormat.GetLocalTimeStampMinute())
         while True:
             if displayDetail: print("Process %s " % (ma))
-            if ma == None:
-                print("ma == none")
-            elif self.WasActive(ma.MinuteId):
+
+            # if ma == None -> we reach the beginning of the day    
+            if ma == None or self.WasActive(ma.MinuteId):
+
                 if displayDetail: print("Activity Found")
                 # Substract 1 to not count the current minute which may not be finished
                 inactivityMinuteCounter    -= 1
@@ -135,7 +142,8 @@ class DailyActivity(ComponentBaseObject):
                 if oneResult:
                     return inactivityMinuteCounter
                 else:
-                    return inactivityMinuteCounter, inactivityHourMinuteSummary, ma.MinuteId                    
+                    tmpMinuteId = ma.MinuteId if ma != None else "reached-bod"
+                    return inactivityMinuteCounter, inactivityHourMinuteSummary, tmpMinuteId
             else:
                 if displayDetail: print("Activity Not Found Found for %s" %(ma.MinuteId))
                 inactivityMinuteCounter += 1

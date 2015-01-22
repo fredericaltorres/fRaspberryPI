@@ -126,9 +126,11 @@ class Led(ComponentBaseObject):
     def SetState(self, onOff):
         Board.PinOnOff(self._pin,  onOff)
         self.State = onOff
+        return self
 
     def SetLevel(self, level):
         Board.PinPWM(self._pin,  level)        
+        return self
 
     def __str__(self):
         return "Led pin:%d, State:%r" % (self._pin, self.State)
