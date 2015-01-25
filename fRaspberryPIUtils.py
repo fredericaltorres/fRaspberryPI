@@ -4,8 +4,9 @@ import time
 ##
 class ComponentBaseObject(object):
 
-    def __init__(self, debugOn = False):
+    def __init__(self, pin = None, debugOn = False):
         self.DebugOn = debugOn
+        self._pin = pin
 
     def Trace(self, m):
         mm = "[%s]%s" % (StringFormat.GetTime(), m)
@@ -13,7 +14,10 @@ class ComponentBaseObject(object):
 
     def Debug(self, m):
         if self.DebugOn:
-            mm = "[obj:%s] %s" % (self.__class__.__name__, m)
+            if self._pin == None:
+                mm = "[obj:%s] %s" % (self.__class__.__name__, m)
+            else:
+                mm = "[obj:%s, pin:%d] %s" % (self.__class__.__name__, self._pin, m)
             print(mm)
 
 ######################################################################

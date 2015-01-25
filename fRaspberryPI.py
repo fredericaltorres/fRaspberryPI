@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+import sys
 from fRaspberryPIUtils import *
 
 # like in the Arduino world
@@ -27,9 +28,10 @@ class BoardClass(ComponentBaseObject):
         self.Debug("SetPinInput pin:%d" % (pin))
         GPIO.setup(pin, GPIO.IN) # Setup GPIO Pin x to OUT
 
-    def Done(self):
-        self.Debug("Done board")
+    def TerminateApplication(self):
+        Board.Trace("Terminating Application")
         GPIO.cleanup()
+        sys.exit(0)
 
     def PinOnOff(self, pin, onOff):
         self.Debug("PinOnOff(%d) = %s" % (pin, onOff))
@@ -61,11 +63,12 @@ Board = BoardClass()
 ## http://www.tutorialspoint.com/python/python_date_time.htm
 class TimeOut(ComponentBaseObject):
 
-    def __init__(self, duration):
-        super(TimeOut, self).__init__()
+    def __init__(self, duration, autoReset = True):
+        super(TimeOut, self).__init__(duration)
         self.Debug("Init duration:%d" % (duration))
         self._duration = duration
         self.Counter   = 0
+        self.AutoReset = autoReset
         self.Reset()
 
     def Reset(self):
@@ -77,7 +80,7 @@ class TimeOut(ComponentBaseObject):
 
     def IsTimeOut(self):
         b = (millis() - self._time) > self._duration
-        if b:
+        if b and self.AutoReset:
             self.Reset();
         return b
 
@@ -92,7 +95,7 @@ class TimeOut(ComponentBaseObject):
 class Led(ComponentBaseObject):
 
     def __init__(self, pin):
-        super(Led, self).__init__()
+        super(Led, self).__init__(pin)
         self.Debug("Init pin:%d" % (pin))
         Board.SetPinOut(pin)
         self._pin  = pin
@@ -113,15 +116,20 @@ class Led(ComponentBaseObject):
             Board.Delay(waitTime)
 
     def __BlinkAsync(self):
-        if (self.GetBlinkDurationCycle() > self._rate):
+        if (self._rate > 0 and self.GetBlinkDurationCycle() > self._rate):
             self.State           = not self.State
             self._blinkStartTime = millis();
             self.SetState(self.State);
 
     def SetBlinkMode(self, rate):
-        self._rate           = rate
-        self._blinkStartTime = millis()
-        self.SetState(True)
+        if rate == OFF or rate == 0:
+            self._rate = 0
+            self.SetState(False)
+        else:    
+            self._rate           = rate
+            self._blinkStartTime = millis()
+            self.SetState(True)
+        return self            
 
     def SetBlinkModeOff(self):
         self._rate = 0
@@ -129,6 +137,12 @@ class Led(ComponentBaseObject):
 
     def GetBlinkDurationCycle(self):
         return millis() - self._blinkStartTime;
+
+    def On(self):
+        return self.SetState(ON)
+
+    def Off(self):
+        return self.SetState(OFF)        
 
     def SetState(self, onOff):
         Board.PinOnOff(self._pin,  onOff)
@@ -150,11 +164,17 @@ class Led(ComponentBaseObject):
 class SunFounderRelay(ComponentBaseObject):
 
     def __init__(self, pin):
-        super(SunFounderRelay, self).__init__()
+        super(SunFounderRelay, self).__init__(pin)
         self.Debug("Init pin:%d" % (pin))
         Board.SetPinOut(pin)
         self._pin  = pin
         self.State = False
+
+    def On(self):
+        return self.SetState(ON)
+
+    def Off(self):
+        return self.SetState(OFF)         
 
     def SetState(self, onOff):
         Board.PinOnOff(self._pin,  not onOff) # << SunFounderRelay are reverse
@@ -172,10 +192,34 @@ class SunFounderRelay(ComponentBaseObject):
 class RadioShackPIRSensor(ComponentBaseObject):
 
     def __init__(self, pin):
-        super(RadioShackPIRSensor, self).__init__()
+        super(RadioShackPIRSensor, self).__init__(pin)
         self.Debug("Init pin:%d" % (pin))
         Board.SetPinInput(pin)
         self._pin  = pin
 
     def MotionDetected(self):
         return Board.DigitalRead(self._pin) == 1
+
+
+######################################################################
+##
+class PullUpButton(ComponentBaseObject):
+
+    def __init__(self, pin):
+        self.DebugOn = True
+        super(PullUpButton, self).__init__(pin)
+        self.Debug("Init pin:%d" % (pin))
+        GPIO.setup(pin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+        self._pin           = pin
+        self._previousInput = 1
+
+    def IsPressed(self):
+        r     = False
+        input = GPIO.input(self._pin)
+        self.Debug("input:%d" % (input))
+        if self._previousInput == 1 and input == 0: # << Remember it is a Pull Up button
+            Board.Delay(25)
+            input = GPIO.input(self._pin)
+            r = (input == 0)
+        self._previousInput = input
+        return r
