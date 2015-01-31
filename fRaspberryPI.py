@@ -13,12 +13,14 @@ ON           = True
 
 ######################################################################
 ##
+## GPIO web reference http://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/
 class BoardClass(ComponentBaseObject):
 
     def __init__(self):
         super(BoardClass, self).__init__()
         self.Debug("Init board")
         GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
+        self.Trace("GPIO version:%s, rpi revision:%s" %(GPIO.VERSION, GPIO.RPI_REVISION))
         
     def SetPinOut(self, pin):
         self.Debug("SetPinOut pin:%d" % (pin))
@@ -205,9 +207,9 @@ class RadioShackPIRSensor(ComponentBaseObject):
 ##
 class PullUpButton(ComponentBaseObject):
 
-    def __init__(self, pin):
-        self.DebugOn = True
+    def __init__(self, pin):        
         super(PullUpButton, self).__init__(pin)
+        self.DebugOn = False
         self.Debug("Init pin:%d" % (pin))
         GPIO.setup(pin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
         self._pin           = pin
@@ -216,10 +218,17 @@ class PullUpButton(ComponentBaseObject):
     def IsPressed(self):
         r     = False
         input = GPIO.input(self._pin)
-        self.Debug("input:%d" % (input))
+
         if self._previousInput == 1 and input == 0: # << Remember it is a Pull Up button
-            Board.Delay(25)
+            self.Debug("PullUpButton(1) _previousInput:1, detected-input:%d" % (input))
+            Board.Delay(50) # should be smaller
             input = GPIO.input(self._pin)
-            r = (input == 0)
-        self._previousInput = input
+            r     = input == 0
+
+        if r:
+            self._previousInput = 1
+            self.Debug("PullUpButton(3) r:%r, input:%d" % (r, input))
+        else:            
+            self._previousInput = input
+
         return r

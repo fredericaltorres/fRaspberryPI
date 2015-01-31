@@ -57,6 +57,7 @@ def HandlePeriodOfInactivity(lightOn):
         Detect if the period of inactivity pass the threshold, if yes shut the lights
     '''
     global lastMinuteIdOfInactivityDetected
+    
     minuteIdOfInactivity    = StringFormat.GetLocalTimeStampMinute()
     minuteOfInactivityCount = dailyActivity.GetMinuteOfInactivityFromNow(oneResult = True)
     if minuteOfInactivityCount > MINUTE_OF_INACTIVITY_THRESHHOLD and lastMinuteIdOfInactivityDetected != minuteIdOfInactivity:
@@ -138,12 +139,13 @@ if __name__ == "__main__":
             lightOn = not lightOn
             if lightOn:
                 TurnLights(lightOn, "User turned lights on")
+                motionSensorResetTask = None
             else:                
                 # user shutdown the light manually, stop detected motion for 30 seconds
                 motionSensorResetTask = TimeOut(MOTION_SENSOR_RESET_TIMEOUT_AFTER_USER_SHUT_LIGHT)
                 Board.Trace("User turned lights off, motion monitoring suspended for %d seconds" % (MOTION_SENSOR_RESET_TIMEOUT_AFTER_USER_SHUT_LIGHT / 1000))
                 TurnLights(lightOn)
                 ResetLedBlinkRateToNormal()
+            Board.Delay(150) # Avoid bouncing this way for now
 
-    Board.Done()
-
+    TerminateApplication()
