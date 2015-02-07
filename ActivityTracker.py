@@ -24,7 +24,7 @@ LIGHT_PIN                           = 18 # Green Wire  - GPIO 24
 MOTION_SENSOR_PIN                   = 12 # Orange Wire - GPIO 18
 
 HOST_PORT                                         = 8080
-HOST_IP                                           = "192.168.1.2"
+#HOST_IP                                           = "192.168.1.2"
 
 MINUTE_OF_INACTIVITY_THRESHHOLD                   = 5         # After 5 minutes of inactivity, we sill shut the lights
 MOTION_SENSOR_TASK_TIMEOUT                        = 1000 / 4  # 4 time a seconds
@@ -132,6 +132,8 @@ def home():
     return bottle.template("\n".join(tpl), hostIp = hostIp)
 
 #http://192.168.1.2:8080/api/lights/on
+#http://192.168.1.2:8080/api/lights/off
+#http://192.168.1.2:8080/api/lights/get
 @bottle.route('/api/lights/<onOff>')
 def LightWebApi(onOff = None):
     '''
@@ -149,15 +151,25 @@ def LightWebApi(onOff = None):
         Board.Trace("webapi-set-light-off")
         lightOn = OFF
         UserManuallyTurnedLights(lightOn)
+    elif onOff == "get":
+        Board.Trace("webapi-set-light-get")
+        tpl = '{ "Status":"Ok", "Lights":%s }' % (str(lightOn).lower()) # has to be valid json
     else:
         Board.Trace("invalid lights parameter")
-        tpl = "{ Status:'Ko' }"
+        tpl = '{ "Status":"Ko" }'; # has to be valid json
     return tpl
 
 def StartInternalWebServer():
     # Start internal rest Api web server
     #bottle.run(host = HOST_IP, port = HOST_PORT, debug = True)
-    t = threading.Thread(target = bottle.run, kwargs = dict(host = HOST_IP, port = HOST_PORT, debug = False))
+    t = threading.Thread(
+        target = bottle.run, 
+        kwargs = dict(
+            host = NetworkUtil.GetWifiIp(), 
+            port = HOST_PORT, 
+            debug = False
+        )
+    )
     t.daemon = True # shutdown if main thread exit
     t.start()
 
@@ -177,6 +189,8 @@ if __name__ == "__main__":
     ResetLedBlinkRateToNormal()
 
     Board.Trace("\r\nActivity Tracker Start @ %s\r\n" % (StringFormat.GetLocalTimeStampMinute()))
+    Board.Trace("Os:%s" % (NetworkUtil.GetOsInfo()))
+    Board.Trace("LocalIp:%s" % (NetworkUtil.GetWifiIp()))
 
     TurnLights(lightOn)
     ShowUserInfo(dailyActivity)

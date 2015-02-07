@@ -7,7 +7,7 @@ from fRaspberryPIUtils import *
 # https://docs.python.org/2/library/unittest.html
  
 class StringFormatClass_UnitTests(unittest.TestCase):
-    """Sample test case"""
+    """Unit tests StringFormatClass"""
 
     def Trace(self, m):
         #print(m)
@@ -30,6 +30,25 @@ class StringFormatClass_UnitTests(unittest.TestCase):
     def testGetLocalTimeStampMinute(self):
         self.Trace(StringFormat.GetLocalTimeStampMinute())
         self.assertTrue(len(StringFormat.GetLocalTimeStampMinute()) > 0)                
+
+
+class NetworkUtilClass_UnitTests(unittest.TestCase):
+    """Sample test case"""
+
+    def Trace(self, m):
+        print(m)
+        pass
+     
+    def setUp(self):
+        pass
+     
+    def tearDown(self):
+        pass
+     
+    def testGetWifiIp(self):
+        ip = NetworkUtil.GetWifiIp()
+        self.Trace("LocalIp: %s" % ip)
+        self.assertTrue(len(ip) > 0)
 
 
 # creating a new test suite
